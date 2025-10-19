@@ -92,7 +92,7 @@ export default function Dashboard() {
             className="w-12 h-12 rounded-lg shadow"
           />
           <h1 className="text-2xl font-semibold text-gray-800">
-            🏥 Inventory KK Dashboard
+             Inventory KK Dashboard
           </h1>
         </div>
         <button
