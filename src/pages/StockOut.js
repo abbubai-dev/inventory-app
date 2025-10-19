@@ -1,98 +1,212 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Scanner from "../components/Scanner";
-import axios from "axios";
-import { API_URL } from "../api";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, AlertTriangle } from "lucide-react";
 
 export default function StockOut() {
-  const [barcode, setBarcode] = useState("");
-  const [qty, setQty] = useState(1);
+  const [scannedCode, setScannedCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [item, setItem] = useState(null);
+  const [quantity, setQuantity] = useState("");
+  const [error, setError] = useState("");
+  const [lastRecord, setLastRecord] = useState(null);
 
-  const handleDetected = (code) => setBarcode(code);
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec";
 
-  const handleSave = async () => {
-    if (!barcode) return alert("No barcode scanned");
+  // === When barcode detected ===
+  const handleDetected = async (code) => {
+    if (!code) return;
+    setScannedCode(code);
     setLoading(true);
+    setError("");
     try {
-      await axios.post(API_URL, {
-        action: "stockOut",
-        barcode,
-        quantity: qty,
-        user: "WebUser",
-      });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
-      setBarcode("");
-      setQty(1);
+      const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
+      const data = await res.json();
+      if (!data || !data.Barcode) {
+        setError("Item is not in the stock");
+        setItem(null);
+      } else {
+        setItem(data);
+      }
+      setLoading(false);
     } catch (err) {
-      console.error(err);
-      alert("Save failed");
-    } finally {
+      console.error("Error fetching item:", err);
+      setError("Error fetching item data");
       setLoading(false);
     }
   };
 
-  return (
-    <div className="p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold mb-6 text-gray-800">📤 Stock Out</h1>
+  // === Save stock-out ===
+  const handleSave = async () => {
+    if (!item) return alert("No item selected");
+    if (!quantity) return alert("Please enter quantity");
+    if (Number(quantity) > Number(item.Stock || 0))
+      return alert("Quantity exceeds available stock!");
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Scanner Section */}
-        <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center">
-          <h2 className="text-lg font-medium mb-4 text-gray-700">Scan Barcode</h2>
-          <div className="w-full border rounded-lg overflow-hidden">
-            <Scanner onDetected={handleDetected} />
+    setSaving(true);
+    const payload = {
+      action: "stockOut",
+      barcode: item.Barcode,
+      quantity: Number(quantity),
+      user: "Admin"
+    };
+
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" }
+      });
+
+      setQuantity("");
+      setSaving(false);
+      setItem(null);
+      setScannedCode("");
+      await loadLastRecord();
+    } catch (err) {
+      console.error("Save failed:", err);
+      setSaving(false);
+    }
+  };
+
+  // === Load last transaction ===
+  const loadLastRecord = async () => {
+    try {
+      const res = await fetch(`${API_URL}?action=getLastTransaction`);
+      const data = await res.json();
+      setLastRecord(data);
+    } catch (err) {
+      console.error("Error loading last record:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadLastRecord();
+  }, []);
+
+  return (
+    <div className="p-4 flex flex-col gap-4 max-w-md mx-auto">
+      {/* Manual Barcode Entry */}
+      <div className="flex gap-2 mb-2">
+        <input
+          type="text"
+          placeholder="Enter barcode manually"
+          value={scannedCode}
+          onChange={(e) => setScannedCode(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
+        <button
+          onClick={() => handleDetected(scannedCode)}
+          className="bg-blue-600 text-white px-3 rounded"
+        >
+          Fetch
+        </button>
+      </div>
+
+      {/* Scanner */}
+      <div className="relative">
+        {loading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+            <Loader2 className="animate-spin text-white w-8 h-8" />
           </div>
-          <p className="mt-3 text-gray-600 text-center">
-            Detected:{" "}
-            <span className="font-semibold text-blue-600">
-              {barcode || "—"}
-            </span>
+        )}
+        <Scanner onDetected={handleDetected} />
+      </div>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 rounded-md p-2 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5" /> {error}
+        </div>
+      )}
+
+      {/* Item Form */}
+      {item && (
+        <div className="bg-white shadow-md rounded-xl p-4 space-y-3">
+          <h2 className="text-lg font-semibold text-gray-700">Item Details</h2>
+          <div className="grid grid-cols-1 gap-2">
+            <input
+              type="text"
+              placeholder="Barcode"
+              value={item.Barcode || scannedCode}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="text"
+              placeholder="Name"
+              value={item.Name || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="text"
+              placeholder="Type"
+              value={item.Type || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="text"
+              placeholder="Category"
+              value={item.Category || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="Quantity to Remove"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="border p-2 rounded w-full"
+              />
+              <span className="text-sm text-gray-600">
+                / Max: {item.Stock || 0}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-red-600 text-white rounded-lg px-4 py-2 w-full flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="animate-spin w-5 h-5" /> Saving...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-5 h-5" /> Save Stock-Out
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Last Saved Record */}
+      {lastRecord && (
+        <div className="bg-gray-50 border rounded-xl p-4">
+          <h3 className="font-semibold text-gray-700 mb-2">Last Saved Record</h3>
+          <p className="text-sm text-gray-600">
+            <strong>Barcode:</strong> {lastRecord.ItemID || "-"}
+          </p>
+          <p className="text-sm text-gray-600">
+            <strong>User:</strong> {lastRecord.User}
+          </p>
+          <p className="text-sm text-gray-600">
+            <strong>Type:</strong> {lastRecord.Type}
+          </p>
+          <p className="text-sm text-gray-600">
+            <strong>Quantity:</strong> {lastRecord.Quantity}
+          </p>
+          <p className="text-sm text-gray-600">
+            <strong>Time:</strong>{" "}
+            {new Date(lastRecord.Timestamp).toLocaleString()}
           </p>
         </div>
-
-        {/* Details Section */}
-        <div className="bg-white rounded-xl shadow p-4">
-          <h2 className="text-lg font-medium mb-4 text-gray-700">Stock Details</h2>
-
-          <label className="block text-gray-600 mb-2">Quantity</label>
-          <input
-            type="number"
-            value={qty}
-            onChange={(e) => setQty(parseInt(e.target.value || 1))}
-            className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            min="1"
-          />
-
-          <div className="mt-6">
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className={`w-full sm:w-auto px-5 py-2.5 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition ${
-                loading
-                  ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin w-5 h-5" /> Saving...
-                </>
-              ) : (
-                "Save Stock Out"
-              )}
-            </button>
-
-            {success && (
-              <div className="flex items-center mt-4 text-green-600 font-medium">
-                <CheckCircle className="w-5 h-5 mr-2" /> Stock Out saved!
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,85 +1,132 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Scanner from "../components/Scanner";
-import axios from "axios";
-import { API_URL } from "../api";
-import { Search, Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 
 export default function CheckItem() {
-  const [barcode, setBarcode] = useState("");
-  const [item, setItem] = useState(null);
+  const [scannedCode, setScannedCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [item, setItem] = useState(null);
+  const [error, setError] = useState("");
 
-  const handleDetected = (code) => setBarcode(code);
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec";
 
-  const handleCheck = async () => {
-    if (!barcode) return alert("No barcode scanned");
+  // === When barcode detected ===
+  const handleDetected = async (code) => {
+    if (!code) return;
+    setScannedCode(code);
     setLoading(true);
-    setItem(null);
+    setError("");
     try {
-      const res = await axios.get(`${API_URL}?action=getItem&barcode=${barcode}`);
-      setItem(res.data || null);
+      const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
+      const data = await res.json();
+
+      if (!data || !data.Barcode) {
+        setError("❌ Item not found in stock.");
+        setItem(null);
+      } else {
+        setItem(data);
+      }
+
+      setLoading(false);
     } catch (err) {
-      console.error(err);
-      alert("Failed to fetch item details");
-    } finally {
+      console.error("Error fetching item:", err);
+      setError("⚠️ Failed to fetch item details.");
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold mb-6 text-gray-800">🔍 Check Item</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Scanner Section */}
-        <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center">
-          <h2 className="text-lg font-medium mb-4 text-gray-700">Scan Barcode</h2>
-          <div className="w-full border rounded-lg overflow-hidden">
-            <Scanner onDetected={handleDetected} />
+    <div className="p-4 flex flex-col gap-4 max-w-md mx-auto">
+      {/* Scanner */}
+      <div className="relative">
+        {loading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+            <Loader2 className="animate-spin text-white w-8 h-8" />
           </div>
-          <p className="mt-3 text-gray-600 text-center">
-            Detected:{" "}
-            <span className="font-semibold text-blue-600">
-              {barcode || "—"}
-            </span>
-          </p>
-        </div>
-
-        {/* Item Details Section */}
-        <div className="bg-white rounded-xl shadow p-4">
-          <h2 className="text-lg font-medium mb-4 text-gray-700">Item Details</h2>
-
-          <button
-            onClick={handleCheck}
-            disabled={loading}
-            className={`px-5 py-2.5 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition w-full sm:w-auto ${
-              loading
-                ? "bg-blue-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin w-5 h-5" /> Checking...
-              </>
-            ) : (
-              <>
-                <Search className="w-5 h-5" /> Check Item
-              </>
-            )}
-          </button>
-
-          {item && (
-            <div className="mt-6 space-y-2 text-gray-700">
-              <p><strong>Name:</strong> {item.name}</p>
-              <p><strong>Category:</strong> {item.category}</p>
-              <p><strong>Stock:</strong> {item.quantity}</p>
-              <p><strong>Min Stock:</strong> {item.minStock}</p>
-              <p><strong>Last Updated:</strong> {item.lastUpdate}</p>
-            </div>
-          )}
-        </div>
+        )}
+        <Scanner onDetected={handleDetected} />
       </div>
+
+      {/* Manual barcode input (optional fallback) */}
+      <input
+        type="text"
+        placeholder="Enter barcode manually"
+        value={scannedCode}
+        onChange={(e) => setScannedCode(e.target.value)}
+        onBlur={() => handleDetected(scannedCode)}
+        className="border p-2 rounded w-full"
+      />
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 p-3 rounded-md flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Item Details (read-only) */}
+      {item && (
+        <div className="bg-white shadow-md rounded-xl p-4 space-y-3">
+          <h2 className="text-lg font-semibold text-gray-700">Item Details</h2>
+          <div className="grid grid-cols-1 gap-2">
+            <input
+              type="text"
+              placeholder="Barcode"
+              value={item.Barcode || scannedCode}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="text"
+              placeholder="Name"
+              value={item.Name || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="text"
+              placeholder="Type"
+              value={item.Type || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="text"
+              placeholder="Category"
+              value={item.Category || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="number"
+              placeholder="Min Stock"
+              value={item.MinStock || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="number"
+              placeholder="Current Quantity"
+              value={item.Quantity || ""}
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+            <input
+              type="text"
+              placeholder="Created At"
+              value={
+                item.CreatedAt
+                  ? new Date(item.CreatedAt).toLocaleString()
+                  : ""
+              }
+              readOnly
+              className="border p-2 rounded w-full bg-gray-100"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
