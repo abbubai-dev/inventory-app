@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Scanner from "../components/Scanner";
 import { Loader2, AlertCircle } from "lucide-react";
 
@@ -8,8 +8,7 @@ export default function CheckItem() {
   const [item, setItem] = useState(null);
   const [error, setError] = useState("");
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec";
+  const API_URL = "/api";
 
   // === When barcode detected ===
   const handleDetected = async (code) => {
@@ -17,6 +16,7 @@ export default function CheckItem() {
     setScannedCode(code);
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
       const data = await res.json();
@@ -27,11 +27,10 @@ export default function CheckItem() {
       } else {
         setItem(data);
       }
-
-      setLoading(false);
     } catch (err) {
       console.error("Error fetching item:", err);
       setError("⚠️ Failed to fetch item details.");
+    } finally {
       setLoading(false);
     }
   };

@@ -27,21 +27,21 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // === Fetch data from Netlify proxy ===
   const fetchData = async () => {
     setLoading(true);
     try {
       const [itemsRes, transRes] = await Promise.all([
-        fetch(
-          "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec?action=getItems"
-        ).then((r) => r.json()),
-        fetch(
-          "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec?action=getTransactions"
-        ).then((r) => r.json()),
+        fetch("/.netlify/functions/proxy?action=getItems").then((r) => r.json()),
+        fetch("/.netlify/functions/proxy?action=getTransactions").then((r) =>
+          r.json()
+        ),
       ]);
+
       setItems(itemsRes || []);
       setTransactions(transRes || []);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Failed to load data:", err);
       alert("Failed to load dashboard data");
     } finally {
       setLoading(false);
@@ -54,7 +54,10 @@ export default function Dashboard() {
 
   // ======= COMPUTE SUMMARY DATA =======
   const totalItems = items.length;
-  const totalStock = items.reduce((sum, i) => sum + (parseInt(i.Quantity) || 0), 0);
+  const totalStock = items.reduce(
+    (sum, i) => sum + (parseInt(i.Quantity) || 0),
+    0
+  );
   const totalIn = transactions.filter((t) => t.Type === "in").length;
   const totalOut = transactions.filter((t) => t.Type === "out").length;
   const totalDefects = transactions.filter((t) => t.Type === "defect").length;
@@ -86,13 +89,9 @@ export default function Dashboard() {
       {/* ===== HEADER ===== */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <img
-            src={logo}
-            alt="KK Logo"
-            className="w-12 h-12 rounded-lg shadow"
-          />
+          <img src={logo} alt="KK Logo" className="w-12 h-12 rounded-lg shadow" />
           <h1 className="text-2xl font-semibold text-gray-800">
-             Inventory KK Dashboard
+            Inventory KK Dashboard
           </h1>
         </div>
         <button
@@ -100,7 +99,9 @@ export default function Dashboard() {
           className="bg-white p-2 rounded-full shadow hover:bg-blue-50 transition"
         >
           <RefreshCw
-            className={`w-5 h-5 ${loading ? "animate-spin text-blue-500" : "text-gray-500"}`}
+            className={`w-5 h-5 ${
+              loading ? "animate-spin text-blue-500" : "text-gray-500"
+            }`}
           />
         </button>
       </div>

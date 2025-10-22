@@ -11,25 +11,38 @@ export default function StockIn() {
   const [lastRecord, setLastRecord] = useState(null);
   const [minStockEditable, setMinStockEditable] = useState(true);
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec";
+  const API_URL = "/api";
 
   // === When barcode detected ===
   const handleDetected = async (code) => {
-    if (!code) return;
-    setScannedCode(code);
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
-      const data = await res.json();
+  if (!code) return;
+  setScannedCode(code);
+  setLoading(true);
+  try {
+    const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
+    const data = await res.json();
+
+    if (!data || Object.keys(data).length === 0) {
+      // Item not found — treat as new item
+      setItem({
+        Barcode: code,
+        Name: "",
+        Type: "",
+        Category: "",
+        MinStock: "",
+      });
+      setMinStockEditable(true);
+    } else {
+      // Existing item
       setItem(data);
-      setMinStockEditable(data.isNew); // enable only if new item
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching item:", err);
-      setLoading(false);
+      setMinStockEditable(false);
     }
-  };
+  } catch (err) {
+    console.error("Error fetching item:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // === Save stock-in ===
   const handleSave = async () => {
@@ -44,23 +57,23 @@ export default function StockIn() {
       category: item.Category,
       minStock: item.MinStock,
       quantity: Number(quantity),
-      user: "Admin"
+      user: "Admin",
     };
 
     try {
       await fetch(API_URL, {
         method: "POST",
         body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
 
       setQuantity("");
-      setSaving(false);
       setItem(null);
       setScannedCode("");
       await loadLastRecord();
     } catch (err) {
       console.error("Save failed:", err);
+    } finally {
       setSaving(false);
     }
   };

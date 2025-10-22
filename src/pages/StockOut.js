@@ -11,8 +11,7 @@ export default function StockOut() {
   const [error, setError] = useState("");
   const [lastRecord, setLastRecord] = useState(null);
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec";
+  const API_URL = "/api"; // Netlify proxy endpoint
 
   // === When barcode detected ===
   const handleDetected = async (code) => {
@@ -20,19 +19,21 @@ export default function StockOut() {
     setScannedCode(code);
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
       const data = await res.json();
+
       if (!data || !data.Barcode) {
         setError("Item is not in the stock");
         setItem(null);
       } else {
         setItem(data);
       }
-      setLoading(false);
     } catch (err) {
       console.error("Error fetching item:", err);
       setError("Error fetching item data");
+    } finally {
       setLoading(false);
     }
   };
@@ -46,26 +47,27 @@ export default function StockOut() {
 
     setSaving(true);
     const payload = {
-      action: "stockOut",
+      action: "addStockOut",
       barcode: item.Barcode,
       quantity: Number(quantity),
-      user: "Admin"
+      user: "Admin",
     };
 
     try {
       await fetch(API_URL, {
         method: "POST",
         body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
 
       setQuantity("");
-      setSaving(false);
       setItem(null);
       setScannedCode("");
       await loadLastRecord();
     } catch (err) {
       console.error("Save failed:", err);
+      alert("Failed to save stock-out.");
+    } finally {
       setSaving(false);
     }
   };
@@ -85,6 +87,7 @@ export default function StockOut() {
     loadLastRecord();
   }, []);
 
+  // === UI ===
   return (
     <div className="p-4 flex flex-col gap-4 max-w-md mx-auto">
       {/* Manual Barcode Entry */}
@@ -114,13 +117,14 @@ export default function StockOut() {
         <Scanner onDetected={handleDetected} />
       </div>
 
+      {/* Error Message */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 rounded-md p-2 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5" /> {error}
         </div>
       )}
 
-      {/* Item Form */}
+      {/* Item Details */}
       {item && (
         <div className="bg-white shadow-md rounded-xl p-4 space-y-3">
           <h2 className="text-lg font-semibold text-gray-700">Item Details</h2>
