@@ -28,6 +28,10 @@ export default function StockOut() {
         setError("Item is not in the stock");
         setItem(null);
       } else {
+        // Ensure MinStock is part of the returned data.
+        if (data.Stock < data.MinStock) {
+          setError(`Warning: Stock for this item is below the minimum required amount (${data.MinStock})`);
+        }
         setItem(data);
       }
     } catch (err) {
@@ -42,8 +46,13 @@ export default function StockOut() {
   const handleSave = async () => {
     if (!item) return alert("No item selected");
     if (!quantity) return alert("Please enter quantity");
-    if (Number(quantity) > Number(item.Stock || 0))
-      return alert("Quantity exceeds available stock!");
+    
+    const newStock = Number(item.Stock || 0) - Number(quantity);
+    
+    // Check if new stock is below MinStock
+    if (newStock < Number(item.MinStock || 0)) {
+        return alert(`Warning: This action will put the item below its minimum stock level of ${item.MinStock}!`);
+    }
 
     setSaving(true);
     const payload = {

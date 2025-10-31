@@ -28,6 +28,10 @@ export default function Defects() {
         setError("Item is not in the stock");
         setItem(null);
       } else {
+        // Optional: Show warning if current stock is already low
+        if (data.Stock < data.MinStock) {
+          setError(`Warning: Stock for this item is below the minimum required amount (${data.MinStock})`);
+        }
         setItem(data);
       }
     } catch (err) {
@@ -44,6 +48,18 @@ export default function Defects() {
     if (!quantity) return alert("Please enter quantity");
     if (Number(quantity) > Number(item.Stock || 0))
       return alert("Quantity exceeds available stock!");
+
+    // Calculate the new stock level
+    const newStock = Number(item.Stock || 0) - Number(quantity);
+
+    // Check if new stock is below MinStock
+    if (newStock < Number(item.MinStock || 0)) {
+        // Changed alert to a warning message, as defects are required actions
+        const confirm = window.confirm(
+            `Warning: This action will put the item below its minimum stock level of ${item.MinStock}. Do you wish to continue?`
+        );
+        if (!confirm) return;
+    }
 
     setSaving(true);
     const payload = {
