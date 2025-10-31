@@ -12,7 +12,13 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <Router>
+    // FIX: Added the 'future' prop to opt-in to v7 behavior and silence warnings
+    <Router
+      future={{ 
+        v7_startTransition: true, 
+        v7_relativeSplatPath: true 
+      }}
+    >
       <div className="flex h-screen bg-gray-50 overflow-hidden">
         {/* Sidebar */}
         <div
