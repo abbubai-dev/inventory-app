@@ -47,8 +47,8 @@ export default function Dashboard() {
     setLoading(true);
     try {
       // Use the helper fetchWithTimeout function
-      const itemsRes = await fetchWithTimeout("/netlify/functions/proxy?action=getItems");
-      const transRes = await fetchWithTimeout("/netlify/functions/proxy?action=getTransactions");
+      const itemsRes = await fetchWithTimeout("/.netlify/functions/proxy?action=getItems");
+      const transRes = await fetchWithTimeout("/.netlify/functions/proxy?action=getTransactions");
 
       if (!itemsRes.ok || !transRes.ok) {
         throw new Error("Network response was not ok");
