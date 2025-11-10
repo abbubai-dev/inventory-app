@@ -24,13 +24,13 @@ export default function Defects() {
       const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
       const data = await res.json();
 
-      if (!data || !data.Barcode) {
+      if (!data || !data.barcode) {
         setError("Item is not in the stock");
         setItem(null);
       } else {
         // Optional: Show warning if current stock is already low
-        if (data.Stock < data.MinStock) {
-          setError(`Warning: Stock for this item is below the minimum required amount (${data.MinStock})`);
+        if (data.stock < data.minstock) {
+          setError(`Warning: Stock for this item is below the minimum required amount (${data.minstock})`);
         }
         setItem(data);
       }
@@ -46,17 +46,17 @@ export default function Defects() {
   const handleSave = async () => {
     if (!item) return alert("No item selected");
     if (!quantity) return alert("Please enter quantity");
-    if (Number(quantity) > Number(item.Stock || 0))
+    if (Number(quantity) > Number(item.stock || 0))
       return alert("Quantity exceeds available stock!");
 
     // Calculate the new stock level
-    const newStock = Number(item.Stock || 0) - Number(quantity);
+    const newStock = Number(item.stock || 0) - Number(quantity);
 
     // Check if new stock is below MinStock
-    if (newStock < Number(item.MinStock || 0)) {
+    if (newStock < Number(item.minstock || 0)) {
         // Changed alert to a warning message, as defects are required actions
         const confirm = window.confirm(
-            `Warning: This action will put the item below its minimum stock level of ${item.MinStock}. Do you wish to continue?`
+            `Warning: This action will put the item below its minimum stock level of ${item.minstock}. Do you wish to continue?`
         );
         if (!confirm) return;
     }

@@ -25,11 +25,11 @@ export default function StockIn() {
     if (!data || Object.keys(data).length === 0) {
       // Item not found — treat as new item
       setItem({
-        Barcode: code,
-        Name: "",
-        Type: "",
-        Category: "",
-        MinStock: "",
+        barcode: code,
+        name: "",
+        type: "",
+        category: "",
+        minstock: "",
       });
       setMinStockEditable(true);
     } else {
@@ -50,12 +50,12 @@ export default function StockIn() {
 
     setSaving(true);
     const payload = {
-      action: "stockIn",
-      barcode: item.Barcode,
-      name: item.Name,
-      type: item.Type,
-      category: item.Category,
-      minStock: item.MinStock,
+      action: "addStockIn",
+      barcode: item.barcode,
+      name: item.name,
+      type: item.type,
+      category: item.category,
+      minstock: item.minstock,
       quantity: Number(quantity),
       user: "Admin",
     };
@@ -130,37 +130,37 @@ export default function StockIn() {
             <input
               type="text"
               placeholder="Barcode"
-              value={item.Barcode || scannedCode}
+              value={item.barcode || scannedCode}
               readOnly
               className="border p-2 rounded w-full"
             />
             <input
               type="text"
               placeholder="Name"
-              value={item.Name || ""}
-              onChange={(e) => setItem({ ...item, Name: e.target.value })}
+              value={item.name || ""}
+              onChange={(e) => setItem({ ...item, name: e.target.value })}
               className="border p-2 rounded w-full"
             />
             <input
               type="text"
               placeholder="Type"
-              value={item.Type || ""}
-              onChange={(e) => setItem({ ...item, Type: e.target.value })}
+              value={item.type || ""}
+              onChange={(e) => setItem({ ...item, type: e.target.value })}
               className="border p-2 rounded w-full"
             />
             <input
               type="text"
               placeholder="Category"
-              value={item.Category || ""}
-              onChange={(e) => setItem({ ...item, Category: e.target.value })}
+              value={item.category || ""}
+              onChange={(e) => setItem({ ...item, category: e.target.value })}
               className="border p-2 rounded w-full"
             />
             <input
               type="number"
               placeholder="Min Stock"
-              value={item.MinStock || ""}
+              value={item.minstock || ""}
               disabled={!minStockEditable}
-              onChange={(e) => setItem({ ...item, MinStock: e.target.value })}
+              onChange={(e) => setItem({ ...item, minstock: e.target.value })}
               className={`border p-2 rounded w-full ${
                 !minStockEditable ? "bg-gray-100 cursor-not-allowed" : ""
               }`}

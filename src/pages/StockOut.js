@@ -24,13 +24,13 @@ export default function StockOut() {
       const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
       const data = await res.json();
 
-      if (!data || !data.Barcode) {
+      if (!data || !data.barcode) {
         setError("Item is not in the stock");
         setItem(null);
       } else {
         // Ensure MinStock is part of the returned data.
-        if (data.Stock < data.MinStock) {
-          setError(`Warning: Stock for this item is below the minimum required amount (${data.MinStock})`);
+        if (data.stock < data.minstock) {
+          setError(`Warning: Stock for this item is below the minimum required amount (${data.minstock})`);
         }
         setItem(data);
       }
@@ -47,17 +47,17 @@ export default function StockOut() {
     if (!item) return alert("No item selected");
     if (!quantity) return alert("Please enter quantity");
     
-    const newStock = Number(item.Stock || 0) - Number(quantity);
+    const newStock = Number(item.stock || 0) - Number(quantity);
     
     // Check if new stock is below MinStock
-    if (newStock < Number(item.MinStock || 0)) {
-        return alert(`Warning: This action will put the item below its minimum stock level of ${item.MinStock}!`);
+    if (newStock < Number(item.minstock || 0)) {
+        return alert(`Warning: This action will put the item below its minimum stock level of ${item.minstock}!`);
     }
 
     setSaving(true);
     const payload = {
       action: "addStockOut",
-      barcode: item.Barcode,
+      barcode: item.barcode,
       quantity: Number(quantity),
       user: "Admin",
     };
@@ -141,28 +141,28 @@ export default function StockOut() {
             <input
               type="text"
               placeholder="Barcode"
-              value={item.Barcode || scannedCode}
+              value={item.barcode || scannedCode}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
             <input
               type="text"
               placeholder="Name"
-              value={item.Name || ""}
+              value={item.name || ""}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
             <input
               type="text"
               placeholder="Type"
-              value={item.Type || ""}
+              value={item.type || ""}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
             <input
               type="text"
               placeholder="Category"
-              value={item.Category || ""}
+              value={item.category || ""}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
@@ -175,7 +175,7 @@ export default function StockOut() {
                 className="border p-2 rounded w-full"
               />
               <span className="text-sm text-gray-600">
-                / Max: {item.Stock || 0}
+                / Max: {item.stock || 0}
               </span>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function StockOut() {
         <div className="bg-gray-50 border rounded-xl p-4">
           <h3 className="font-semibold text-gray-700 mb-2">Last Saved Record</h3>
           <p className="text-sm text-gray-600">
-            <strong>Barcode:</strong> {lastRecord.ItemID || "-"}
+            <strong>Barcode:</strong> {lastRecord.Barcode || "-"}
           </p>
           <p className="text-sm text-gray-600">
             <strong>User:</strong> {lastRecord.User}
