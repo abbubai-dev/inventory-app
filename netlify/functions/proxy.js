@@ -1,12 +1,13 @@
 // netlify/functions/proxy.js
-import fetch from "node-fetch";
 
 export async function handler(event, context) {
   const API_URL = "https://script.google.com/macros/s/AKfycbxPCh3ANaZAl_kc2StbF19scMAyKDzQZv2n746FvVGHTJk3urIltB3qn59HNEUY4_ZQ/exec";
 
   try {
-    const url = `${API_URL}?${event.rawQuery || ""}`;
+    const query = event.rawQuery ? `?${event.rawQuery}` : "";
+    const url = `${API_URL}${query}`;
     const res = await fetch(url);
+
 
     if (!res.ok) {
       throw new Error(`Upstream error ${res.status}`);
