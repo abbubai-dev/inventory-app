@@ -1,21 +1,25 @@
 import { useState } from "react";
 import Scanner from "../components/Scanner";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Search } from "lucide-react";
 
 export default function CheckItem() {
-  const [scannedCode, setScannedCode] = useState("");
+  const [barcode, setBarcode] = useState("");
   const [loading, setLoading] = useState(false);
   const [item, setItem] = useState(null);
   const [error, setError] = useState("");
 
   const API_URL = "/api";
 
-  // === When barcode detected ===
-  const handleDetected = async (code) => {
-    if (!code) return;
-    setScannedCode(code);
+  // === Fetch item by barcode ===
+  const fetchItem = async (code) => {
+    if (!code) {
+      setError("Please enter or scan a barcode.");
+      return;
+    }
+
     setLoading(true);
     setError("");
+    setItem(null);
 
     try {
       const res = await fetch(`${API_URL}?action=getItemByBarcode&barcode=${code}`);
@@ -23,7 +27,6 @@ export default function CheckItem() {
 
       if (!data || !data.Barcode) {
         setError("❌ Item not found in stock.");
-        setItem(null);
       } else {
         setItem(data);
       }
@@ -35,27 +38,46 @@ export default function CheckItem() {
     }
   };
 
+  // === When barcode detected from scanner ===
+  const handleDetected = (code) => {
+    setBarcode(code);
+    fetchItem(code);
+  };
+
   return (
-    <div className="p-4 flex flex-col gap-4 max-w-md mx-auto">
-      {/* Scanner */}
-      <div className="relative">
+    <div className="max-w-md mx-auto p-4 bg-gray-50 min-h-screen flex flex-col gap-4">
+      <h1 className="text-xl font-semibold text-gray-800 text-center">
+        🔍 Check Item Details
+      </h1>
+
+      {/* Scanner Section */}
+      <div className="relative border border-gray-300 rounded-lg overflow-hidden shadow-sm">
         {loading && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-            <Loader2 className="animate-spin text-white w-8 h-8" />
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
         )}
         <Scanner onDetected={handleDetected} />
       </div>
 
-      {/* Manual barcode input (optional fallback) */}
-      <input
-        type="text"
-        placeholder="Enter barcode manually"
-        value={scannedCode}
-        onChange={(e) => setScannedCode(e.target.value)}
-        onBlur={() => handleDetected(scannedCode)}
-        className="border p-2 rounded w-full"
-      />
+      {/* Manual Input + Fetch Button */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Enter barcode manually"
+          value={barcode}
+          onChange={(e) => setBarcode(e.target.value)}
+          className="flex-1 border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={() => fetchItem(barcode)}
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg flex items-center justify-center gap-1 transition"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+          <span>Fetch</span>
+        </button>
+      </div>
 
       {/* Error Message */}
       {error && (
@@ -65,64 +87,21 @@ export default function CheckItem() {
         </div>
       )}
 
-      {/* Item Details (read-only) */}
+      {/* Item Details Card */}
       {item && (
-        <div className="bg-white shadow-md rounded-xl p-4 space-y-3">
-          <h2 className="text-lg font-semibold text-gray-700">Item Details</h2>
-          <div className="grid grid-cols-1 gap-2">
-            <input
-              type="text"
-              placeholder="Barcode"
-              value={item.Barcode || scannedCode}
-              readOnly
-              className="border p-2 rounded w-full bg-gray-100"
-            />
-            <input
-              type="text"
-              placeholder="Name"
-              value={item.Name || ""}
-              readOnly
-              className="border p-2 rounded w-full bg-gray-100"
-            />
-            <input
-              type="text"
-              placeholder="Type"
-              value={item.Type || ""}
-              readOnly
-              className="border p-2 rounded w-full bg-gray-100"
-            />
-            <input
-              type="text"
-              placeholder="Category"
-              value={item.Category || ""}
-              readOnly
-              className="border p-2 rounded w-full bg-gray-100"
-            />
-            <input
-              type="number"
-              placeholder="Min Stock"
-              value={item.MinStock || ""}
-              readOnly
-              className="border p-2 rounded w-full bg-gray-100"
-            />
-            <input
-              type="number"
-              placeholder="Current Quantity"
-              value={item.Quantity || ""}
-              readOnly
-              className="border p-2 rounded w-full bg-gray-100"
-            />
-            <input
-              type="text"
-              placeholder="Created At"
-              value={
-                item.CreatedAt
-                  ? new Date(item.CreatedAt).toLocaleString()
-                  : ""
-              }
-              readOnly
-              className="border p-2 rounded w-full bg-gray-100"
-            />
+        <div className="bg-white rounded-xl shadow-md p-4 space-y-2 border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-700 border-b pb-1">Item Details</h2>
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div><strong>Barcode:</strong> {item.Barcode}</div>
+            <div><strong>Name:</strong> {item.Name}</div>
+            <div><strong>Type:</strong> {item.Type}</div>
+            <div><strong>Category:</strong> {item.Category}</div>
+            <div><strong>Min Stock:</strong> {item.MinStock}</div>
+            <div><strong>Quantity:</strong> {item.Quantity}</div>
+            <div>
+              <strong>Created At:</strong>{" "}
+              {item.CreatedAt ? new Date(item.CreatedAt).toLocaleString() : "-"}
+            </div>
           </div>
         </div>
       )}

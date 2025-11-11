@@ -46,17 +46,17 @@ export default function Defects() {
   const handleSave = async () => {
     if (!item) return alert("No item selected");
     if (!quantity) return alert("Please enter quantity");
-    if (Number(quantity) > Number(item.stock || 0))
+    if (Number(quantity) > Number(item.Stock || 0))
       return alert("Quantity exceeds available stock!");
 
     // Calculate the new stock level
-    const newStock = Number(item.stock || 0) - Number(quantity);
+    const newStock = Number(item.Stock || 0) - Number(quantity);
 
     // Check if new stock is below MinStock
-    if (newStock < Number(item.minstock || 0)) {
+    if (newStock < Number(item.MinStock || 0)) {
         // Changed alert to a warning message, as defects are required actions
         const confirm = window.confirm(
-            `Warning: This action will put the item below its minimum stock level of ${item.minstock}. Do you wish to continue?`
+            `Warning: This action will put the item below its minimum stock level of ${item.MinStock}. Do you wish to continue?`
         );
         if (!confirm) return;
     }
@@ -206,7 +206,7 @@ export default function Defects() {
         <div className="bg-gray-50 border rounded-xl p-4">
           <h3 className="font-semibold text-gray-700 mb-2">Last Saved Record</h3>
           <p className="text-sm text-gray-600">
-            <strong>Barcode:</strong> {lastRecord.ItemID || "-"}
+            <strong>Barcode:</strong> {lastRecord.Barcode || "-"}
           </p>
           <p className="text-sm text-gray-600">
             <strong>User:</strong> {lastRecord.User}

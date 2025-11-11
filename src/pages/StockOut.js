@@ -47,17 +47,17 @@ export default function StockOut() {
     if (!item) return alert("No item selected");
     if (!quantity) return alert("Please enter quantity");
     
-    const newStock = Number(item.stock || 0) - Number(quantity);
+    const newStock = Number(item.Stock || 0) - Number(quantity);
     
     // Check if new stock is below MinStock
-    if (newStock < Number(item.minstock || 0)) {
-        return alert(`Warning: This action will put the item below its minimum stock level of ${item.minstock}!`);
+    if (newStock < Number(item.MinStock || 0)) {
+        return alert(`Warning: This action will put the item below its minimum stock level of ${item.MinStock}!`);
     }
 
     setSaving(true);
     const payload = {
       action: "addStockOut",
-      barcode: item.barcode,
+      barcode: item.Barcode,
       quantity: Number(quantity),
       user: "Admin",
     };
@@ -141,28 +141,28 @@ export default function StockOut() {
             <input
               type="text"
               placeholder="Barcode"
-              value={item.barcode || scannedCode}
+              value={item.Barcode || scannedCode}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
             <input
               type="text"
               placeholder="Name"
-              value={item.name || ""}
+              value={item.Name || ""}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
             <input
               type="text"
               placeholder="Type"
-              value={item.type || ""}
+              value={item.Type || ""}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
             <input
               type="text"
               placeholder="Category"
-              value={item.category || ""}
+              value={item.Category || ""}
               readOnly
               className="border p-2 rounded w-full bg-gray-100"
             />
@@ -175,7 +175,7 @@ export default function StockOut() {
                 className="border p-2 rounded w-full"
               />
               <span className="text-sm text-gray-600">
-                / Max: {item.stock || 0}
+                / Max: {item.Stock || 0}
               </span>
             </div>
           </div>
